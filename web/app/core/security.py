@@ -67,9 +67,10 @@ class JWTBearer(HTTPBearer):
             try:
                 token = await decode_access_token(token=credentials.credentials)
             except jwt.PyJWTError as e:
+                # e can be "Not enough segments"
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail=f"{e}"
+                    detail=f"Invalid authorization token"
                 )
 
             if token is None:
