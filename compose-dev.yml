@@ -1,0 +1,33 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    container_name: blog_api_dev
+    command: uv run uvicorn --factory app.main:application_factory --workers 1 --host 0.0.0.0 --port 8001 --reload
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./web/:/usr/src/web/
+    env_file:
+      - .env
+
+  redis:
+    image: redis:7-alpine
+    container_name: blog_redis_dev
+    volumes:
+      - redis_data:/data
+
+  postgres_db:
+    image: postgres:17-alpine
+    container_name: blog_pgsql_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+volumes:
+  redis_data:
+    name: blog_redis_dev
+  postgres_data:
+    name: blog_postgres_dev
