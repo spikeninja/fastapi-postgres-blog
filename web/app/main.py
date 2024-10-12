@@ -6,7 +6,7 @@ from dishka.integrations.fastapi import setup_dishka
 
 from app.ioc import AppProvider
 from app.utils.fastapi import lifespan
-from app.api import auth, users, posts, comments
+from app.api import auth, users, posts
 
 
 def application_factory() -> FastAPI:
@@ -26,7 +26,6 @@ def application_factory() -> FastAPI:
     app.include_router(auth.router, prefix="/api", tags=["auth"])
     app.include_router(users.router, prefix="/api", tags=["users"])
     app.include_router(posts.router, prefix="/api", tags=["posts"])
-    # app.include_router(comments.router, prefix="/api", tags=["comments"])
 
     container = make_async_container(AppProvider())
     setup_dishka(app=app, container=container)
