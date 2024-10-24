@@ -272,3 +272,37 @@ async def update_comment(
     )
 
     return await repositories.comments().get_by_id(_id=comment_id)
+
+
+@router.delete("/{_id}/comments/{comment_id}", response_model=CommentPublic)
+async def delete_comment(
+    _id: int,
+    comment_id: int,
+    repositories: FromDishka[Repositories],
+    current_user: UsersModel = Depends(get_current_user),
+):
+    """"""
+
+    post = await repositories.posts().get_by_id(_id=_id)
+    if not post:
+        raise HTTPException(
+            detail=f"Post with id={_id} does not exist",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    comment = await repositories.comments().get_by_id(_id=comment_id)
+    if not comment:
+        raise HTTPException(
+            detail=f"Post with id={_id} does not exist",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if current_user.id != comment.author.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can update only your comments"
+        )
+
+    await repositories.comments().delete(_id=_id)
+
+    return comment
