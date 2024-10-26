@@ -267,7 +267,7 @@ async def update_comment(
         )
 
     await repositories.comments().update(
-        _id=_id,
+        _id=comment_id,
         values=request.model_dump(exclude_unset=True),
     )
 
@@ -303,6 +303,6 @@ async def delete_comment(
             detail="You can update only your comments"
         )
 
-    await repositories.comments().delete(_id=_id)
+    await repositories.comments().delete(_id=comment_id)
 
     return comment
