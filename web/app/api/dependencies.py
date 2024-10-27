@@ -1,7 +1,7 @@
 from typing import AsyncGenerator
 
 from jwt.exceptions import PyJWTError
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Header
 
 from app.ioc import AppContainer, Scope
 from app.repositories import Repositories
@@ -16,10 +16,15 @@ async def get_repositories() -> AsyncGenerator[Repositories, None]:
 
 
 async def get_optional_user(
-    token: str = Depends(JWTBearer()),
+    authorization: str | None = Header(default=None),
     repositories: Repositories = Depends(get_repositories),
 ):
     """"""
+
+    if not authorization:
+        return None
+
+    token = authorization.replace("Bearer ", "")
 
     try:
         payload = await decode_access_token(token=token)
