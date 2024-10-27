@@ -1,10 +1,11 @@
 from dishka.integrations.fastapi import FromDishka, DishkaRoute
 from fastapi import APIRouter, HTTPException, status, Query, Depends
 
+from app.services import Services
 from app.db.models import UsersModel
 from app.repositories import Repositories
 from app.schemas.mixins import ResponseItems
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, get_optional_user
 from app.schemas.posts import PostCreateRequest, PostUpdateRequest, PostPublic
 from app.schemas.comments import CommentCreateRequest, CommentPublic, CommentUpdateRequest
 
@@ -13,16 +14,17 @@ router = APIRouter(prefix="/posts", route_class=DishkaRoute)
 
 @router.get("/")
 async def get_all(
-    repositories: FromDishka[Repositories],
+    services: FromDishka[Services],
     q: str | None = None,
     limit: int | None = None,
     offset: int | None = None,
     author_id: int | None = None,
+    current_user: UsersModel | None = Depends(get_optional_user),
     # tags: list[str] = Query(None, alias="tags"),
 ) -> ResponseItems[PostPublic]:
     """"""
 
-    posts, count = await repositories.posts().get_all(
+    posts, count = await services.posts().get_all(
         q=q,
         limit=limit,
         offset=offset,
@@ -32,6 +34,7 @@ async def get_all(
             "operation": "eq",
         }] if author_id else None,
         sorters=None,
+        user_id=current_user.id if current_user else None,
     )
 
     return ResponseItems(count=count, items=posts)
@@ -49,11 +52,15 @@ async def get_all_tags(repositories: FromDishka[Repositories]):
 @router.get("/{_id}", response_model=PostPublic)
 async def get_by_id(
     _id: int,
-    repositories: FromDishka[Repositories]
+    services: FromDishka[Services],
+    current_user: UsersModel | None = Depends(get_optional_user),
 ):
     """"""
 
-    post_db = await repositories.posts().get_by_id(_id=_id)
+    post_db = await services.posts().get_by_id(
+        _id=_id,
+        user_id=current_user.id if current_user else None,
+    )
     if not post_db:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -66,12 +73,12 @@ async def get_by_id(
 @router.post("/", response_model=PostPublic)
 async def create_post(
     request: PostCreateRequest,
-    repositories: FromDishka[Repositories],
+    services: FromDishka[Services],
     current_user: UsersModel = Depends(get_current_user),
 ):
     """"""
 
-    return await repositories.posts().create(
+    return await services.posts().create(
         tags=request.tags,
         text=request.text,
         title=request.title,
@@ -83,12 +90,12 @@ async def create_post(
 async def update(
     _id: int,
     request: PostUpdateRequest,
-    repositories: FromDishka[Repositories],
+    services: FromDishka[Services],
     current_user: UsersModel = Depends(get_current_user),
 ):
     """"""
 
-    post_db = await repositories.posts().get_by_id(_id=_id)
+    post_db = await services.posts().get_by_id(_id=_id)
     if not post_db:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -105,19 +112,22 @@ async def update(
     if not values:
         return post_db
 
-    await repositories.posts().update(_id=_id, values=values)
-    return await repositories.posts().get_by_id(_id=_id)
+    await services.posts().update(_id=_id, values=values)
+    return await services.posts().get_by_id(_id=_id)
 
 
 @router.delete("/{_id}", response_model=PostPublic)
 async def delete(
     _id: int,
-    repositories: FromDishka[Repositories],
-    current_user: UsersModel = Depends(get_current_user),
+    services: FromDishka[Services],
+    current_user: UsersModel | None = Depends(get_optional_user),
 ):
     """"""
 
-    post_db = await repositories.posts().get_by_id(_id=_id)
+    post_db = await services.posts().get_by_id(
+        _id=_id,
+        user_id=current_user.id if current_user else None,
+    )
     if not post_db:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -130,7 +140,7 @@ async def delete(
             detail="You can delete only your posts"
         )
 
-    await repositories.posts().delete(_id=_id)
+    await services.posts().delete(_id=_id)
 
     return post_db
 
@@ -138,6 +148,7 @@ async def delete(
 @router.post("/{_id}/like", response_model=PostPublic)
 async def like_post(
     _id: int,
+    services: FromDishka[Services],
     repositories: FromDishka[Repositories],
     current_user: UsersModel = Depends(get_current_user),
 ):
@@ -156,12 +167,13 @@ async def like_post(
 
     await repositories.posts().like(post_id=_id, user_id=current_user.id)
 
-    return await repositories.posts().get_by_id(_id=_id)
+    return await services.posts().get_by_id(_id=_id, user_id=current_user.id)
 
 
 @router.delete("/{_id}/like")
 async def dislike_post(
     _id: int,
+    services: FromDishka[Services],
     repositories: FromDishka[Repositories],
     current_user: UsersModel = Depends(get_current_user),
 ):
@@ -180,7 +192,7 @@ async def dislike_post(
 
     await repositories.posts().dislike(post_id=_id, user_id=current_user.id)
 
-    return await repositories.posts().get_by_id(_id=_id)
+    return await services.posts().get_by_id(_id=_id, user_id=current_user.id)
 
 
 @router.get("/{_id}/comments", response_model=ResponseItems[CommentPublic])

@@ -1,8 +1,6 @@
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.posts import PostDTO
-from app.schemas.users import UserDTO
 from app.db.models import PostsModel, LikesModel
 from app.repositories.generic import SqlAlchemyRepository
 
@@ -17,29 +15,6 @@ class PostsRepository:
             model=PostsModel,
         )
 
-    async def __mapper(self, post: PostsModel) -> PostDTO:
-        """"""
-
-        return PostDTO(
-            id=post.id,
-            created_at=post.created_at,
-            updated_at=post.updated_at,
-            text=post.text,
-            title=post.title,
-            tags=post.tags,
-            user_id=post.user_id,
-            likes_count=post.likes_count,
-            author=UserDTO(
-                id=post.author.id,
-                name=post.author.name,
-                email=post.author.email,
-                created_at=post.author.created_at,
-                updated_at=post.author.updated_at,
-                deleted_at=post.author.deleted_at,
-                hashed_password=post.author.hashed_password,
-            )
-        )
-
     async def get_all(
         self,
         limit: int | None,
@@ -47,7 +22,7 @@ class PostsRepository:
         filters: list[dict] | None,
         sorters: list[dict] | None,
         q: str | None = None,
-    ) -> tuple[list[PostDTO], int]:
+    ) -> tuple[list[PostsModel], int]:
         """"""
 
         posts, count = await self._repository.get_all(
@@ -58,16 +33,16 @@ class PostsRepository:
             sorters=sorters,
         )
 
-        return [await self.__mapper(post=post) for post in posts], count
+        return posts, count
 
-    async def get_by_id(self, _id: int) -> PostDTO | None:
+    async def get_by_id(self, _id: int) -> PostsModel | None:
         """"""
 
         post = await self._repository.get_by_id(_id=_id)
         if not post:
             return None
 
-        return await self.__mapper(post=post)
+        return post
 
     async def create(
         self,
@@ -75,7 +50,7 @@ class PostsRepository:
         title: str,
         user_id: int,
         tags: list[str],
-    ) -> PostDTO:
+    ) -> PostsModel:
         """"""
 
         post = PostsModel(
@@ -88,7 +63,7 @@ class PostsRepository:
         await self.session.commit()
         await self.session.refresh(post)
 
-        return await self.__mapper(post=post)
+        return await post
 
     async def update(self, _id: int, values: dict):
         """"""
@@ -150,3 +125,24 @@ class PostsRepository:
                 )
             )
         )
+
+    async def posts_liked(self, user_id: int, posts_ids: list[int]) -> dict[int, bool]:
+        """"""
+
+        liked = {_id: False for _id in posts_ids}
+
+        query = (
+            sa.select(LikesModel.post_id)
+            .where(
+                sa.and_(
+                    LikesModel.user_id == user_id,
+                    LikesModel.post_id.in_(posts_ids),
+                )
+            )
+        )
+        results = await self.session.scalars(query)
+
+        for post_id in results:
+            liked[post_id] = True
+
+        return liked

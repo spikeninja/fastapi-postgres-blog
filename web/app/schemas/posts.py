@@ -11,10 +11,11 @@ class PostDTO(BaseModel):
 
     text: str
     title: str
-    tags: list[str]
     user_id: int
-    likes_count: int
+    is_liked: bool
+    tags: list[str]
     author: UserDTO
+    likes_count: int
 
 
 class PostPublic(BaseModel):
@@ -24,6 +25,7 @@ class PostPublic(BaseModel):
 
     text: str
     title: str
+    is_liked: bool
     tags: list[str]
     likes_count: int
     author: UserPublic
