@@ -63,7 +63,7 @@ class PostsRepository:
         await self.session.commit()
         await self.session.refresh(post)
 
-        return await post
+        return post
 
     async def update(self, _id: int, values: dict):
         """"""
