@@ -101,7 +101,10 @@ class CommentsModel(Base):
         nullable=False,
     )
     post_id: Mapped[int] = mapped_column(
-        ForeignKey("posts.id"),
+        ForeignKey(
+            "posts.id",
+            ondelete="cascade",
+        ),
         nullable=False,
     )
     author: Mapped["UsersModel"] = relationship(lazy="joined")

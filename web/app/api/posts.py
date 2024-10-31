@@ -120,7 +120,7 @@ async def update(
 async def delete(
     _id: int,
     services: FromDishka[Services],
-    current_user: UsersModel | None = Depends(get_optional_user),
+    current_user: UsersModel = Depends(get_current_user),
 ):
     """"""
 
