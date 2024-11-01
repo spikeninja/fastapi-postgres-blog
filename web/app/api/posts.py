@@ -95,7 +95,7 @@ async def update(
 ):
     """"""
 
-    post_db = await services.posts().get_by_id(_id=_id)
+    post_db = await services.posts().get_by_id(_id=_id, user_id=current_user.id)
     if not post_db:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -113,7 +113,7 @@ async def update(
         return post_db
 
     await services.posts().update(_id=_id, values=values)
-    return await services.posts().get_by_id(_id=_id)
+    return await services.posts().get_by_id(_id=_id, user_id=current_user.id)
 
 
 @router.delete("/{_id}", response_model=PostPublic)
