@@ -99,6 +99,9 @@ async def get_all_query(
         query = query.where(
             sa.text(f"{model.__tablename__}.{getattr(model, field).name} ILIKE '%{value}%'")
         )
+        count_query = count_query.where(
+            sa.text(f"{model.__tablename__}.{getattr(model, field).name} ILIKE '%{value}%'")
+        )
 
     if sorters:
         query = await apply_sorters(

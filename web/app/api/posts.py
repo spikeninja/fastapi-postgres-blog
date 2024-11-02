@@ -29,7 +29,7 @@ async def get_all(
         tags=tags,
         limit=limit,
         offset=offset,
-        sorters=None,
+        sorters=[{"field": "id", "order": "desc"}],
         filters=[{
             "field": "user_id",
             "val": author_id,

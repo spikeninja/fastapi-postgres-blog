@@ -17,13 +17,13 @@ class PostsRepository:
         )
 
     async def get_all(
-            self,
-            limit: int | None,
-            offset: int | None,
-            filters: list[dict] | None,
-            sorters: list[dict] | None,
-            q: str | None = None,
-            tags: list[str] | None = None,
+        self,
+        limit: int | None,
+        offset: int | None,
+        filters: list[dict] | None,
+        sorters: list[dict] | None,
+        q: str | None = None,
+        tags: list[str] | None = None,
     ) -> tuple[list[PostsModel], int]:
         """"""
 
@@ -34,7 +34,7 @@ class PostsRepository:
             offset=offset,
             filters=filters,
             sorters=sorters,
-            text_search=q,
+            text_search=("title", q) if q is not None else None,
         )
 
         if tags is not None:
