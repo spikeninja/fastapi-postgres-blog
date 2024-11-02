@@ -80,10 +80,11 @@ class PostsRepository:
 
         query = sa.select(PostsModel.tags)
         all_tags = await self.session.scalars(query)
+        # print("ALL TAGS: ", list(all_tags))
 
         unique_tags = set()
         for tag in all_tags:
-            unique_tags.add(tag)
+            unique_tags.update(tag)
 
         return unique_tags
 
