@@ -27,15 +27,17 @@ class PostsService:
         filters: list[dict] | None,
         sorters: list[dict] | None,
         q: str | None = None,
+        tags: list[str] | None = None,
     ) -> tuple[list[PostDTO], int]:
         """"""
 
         posts, count = await self.repositories.posts().get_all(
+            q=q,
+            tags=tags,
             limit=limit,
             offset=offset,
             filters=filters,
             sorters=sorters,
-            q=q,
         )
 
         if user_id is None:

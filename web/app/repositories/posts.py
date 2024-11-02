@@ -2,6 +2,7 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import PostsModel, LikesModel
+from app.repositories.utils import get_all_query
 from app.repositories.generic import SqlAlchemyRepository
 
 
@@ -16,24 +17,38 @@ class PostsRepository:
         )
 
     async def get_all(
-        self,
-        limit: int | None,
-        offset: int | None,
-        filters: list[dict] | None,
-        sorters: list[dict] | None,
-        q: str | None = None,
+            self,
+            limit: int | None,
+            offset: int | None,
+            filters: list[dict] | None,
+            sorters: list[dict] | None,
+            q: str | None = None,
+            tags: list[str] | None = None,
     ) -> tuple[list[PostsModel], int]:
         """"""
 
-        posts, count = await self._repository.get_all(
-            q=q,
+        posts_query, count_query = await get_all_query(
+            model=PostsModel,
+            query=sa.select(PostsModel),
             limit=limit,
             offset=offset,
             filters=filters,
             sorters=sorters,
+            text_search=q,
         )
 
-        return posts, count
+        if tags is not None:
+            posts_query = posts_query.where(
+                PostsModel.tags.bool_op("&&")(tags)
+            )
+            count_query = count_query.where(
+                PostsModel.tags.bool_op("&&")(tags)
+            )
+
+        posts = await self.session.scalars(posts_query)
+        count = await self.session.scalar(count_query)
+
+        return list(posts), int(count)
 
     async def get_by_id(self, _id: int) -> PostsModel | None:
         """"""
@@ -45,11 +60,11 @@ class PostsRepository:
         return post
 
     async def create(
-        self,
-        text: str,
-        title: str,
-        user_id: int,
-        tags: list[str],
+            self,
+            text: str,
+            title: str,
+            user_id: int,
+            tags: list[str],
     ) -> PostsModel:
         """"""
 
@@ -80,7 +95,6 @@ class PostsRepository:
 
         query = sa.select(PostsModel.tags)
         all_tags = await self.session.scalars(query)
-        # print("ALL TAGS: ", list(all_tags))
 
         unique_tags = set()
         for tag in all_tags:

@@ -20,20 +20,21 @@ async def get_all(
     offset: int | None = None,
     author_id: int | None = None,
     current_user: UsersModel | None = Depends(get_optional_user),
-    # tags: list[str] = Query(None, alias="tags"),
+    tags: list[str] = Query(None, alias="tags"),
 ) -> ResponseItems[PostPublic]:
     """"""
 
     posts, count = await services.posts().get_all(
         q=q,
+        tags=tags,
         limit=limit,
         offset=offset,
+        sorters=None,
         filters=[{
             "field": "user_id",
             "val": author_id,
             "operation": "eq",
         }] if author_id else None,
-        sorters=None,
         user_id=current_user.id if current_user else None,
     )
 
